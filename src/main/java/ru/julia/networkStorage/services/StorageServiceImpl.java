@@ -36,33 +36,30 @@ public class StorageServiceImpl implements StorageService {
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
         }
-        mapFilesFromClient.put("file3", 0);
-        mapFilesFromClient.put("file4", 0);
-        clientName = "julia";
         List<String> filesToTransfer = new ArrayList<>();// с сервера на клиент
         List<String> filesToReceive = new ArrayList<>();// с клиента на сервер
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
-//        for (String s : clientFilesFromServer.keySet()) {
-//            if (mapFilesFromClient.containsKey(s)) {
-//            } else {
-//                filesToTransfer.add(s);
-//            }
-//        }
-//        for (String s : mapFilesFromClient.keySet()) {
-//            if (clientFilesFromServer.containsKey(s)) {
-//            } else {
-//                filesToReceive.add(s);
-//            }
-//        }
+        for (String s : clientFilesFromServer.keySet()) {
+            if (mapFilesFromClient.containsKey(s)) {
+            } else {
+                filesToTransfer.add(s);
+            }
+        }
+        for (String s : mapFilesFromClient.keySet()) {
+            if (clientFilesFromServer.containsKey(s)) {
+            } else {
+                filesToReceive.add(s);
+            }
+        }
         FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransfer,
                 filesToReceive);
 
-//        for (String s : filesToTransfer) {
-//            transfer(clientName, s);
-//        }
-//        for (String s : filesToReceive) {
-//            receive(clientName, s);
-//        }
+        for (String s : filesToTransfer) {
+            transfer(clientName, s);
+        }
+        for (String s : filesToReceive) {
+            receive(clientName, s);
+        }
         return filesToTransferAndReceive;
     }
 
