@@ -30,27 +30,39 @@ public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
 
     @Override
-    public FilesToTransferAndReceive filesToTransferAndReceive(Map<String, Integer> filesFromClient, String clientName) {
-        filesFromClient.put("file1", 0);
-        filesFromClient.put("file2", 0);
+    public FilesToTransferAndReceive filesToTransferAndReceive(List<String> filesFromClient,
+                                                               String clientName) {
+        Map<String, Integer> mapFilesFromClient = new HashMap<>();
+        for (String s : filesFromClient) {
+            mapFilesFromClient.put(s, 0);
+        }
+        mapFilesFromClient.put("file3", 0);
+        mapFilesFromClient.put("file4", 0);
         clientName = "julia";
         List<String> filesToTransfer = new ArrayList<>();// с сервера на клиент
         List<String> filesToReceive = new ArrayList<>();// с клиента на сервер
-        FilesToTransferAndReceive filesToTransferAndReceive;
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
-        for (String s : clientFilesFromServer.keySet()) {
-            if (filesFromClient.containsKey(s)) {
-            } else {
-                filesToTransfer.add(s);
-            }
-        }
-        for (String s : filesFromClient.keySet()) {
-            if (clientFilesFromServer.containsKey(s)) {
-            } else {
-                filesToReceive.add(s);
-            }
-        }
-        filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransfer, filesToReceive, clientName);
+//        for (String s : clientFilesFromServer.keySet()) {
+//            if (mapFilesFromClient.containsKey(s)) {
+//            } else {
+//                filesToTransfer.add(s);
+//            }
+//        }
+//        for (String s : mapFilesFromClient.keySet()) {
+//            if (clientFilesFromServer.containsKey(s)) {
+//            } else {
+//                filesToReceive.add(s);
+//            }
+//        }
+        FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransfer,
+                filesToReceive);
+
+//        for (String s : filesToTransfer) {
+//            transfer(clientName, s);
+//        }
+//        for (String s : filesToReceive) {
+//            receive(clientName, s);
+//        }
         return filesToTransferAndReceive;
     }
 
@@ -66,28 +78,15 @@ public class StorageServiceImpl implements StorageService {
         return clientFilesFromServer;
     }
 
-    @Override
-    public void transfer(FilesToTransferAndReceive filesToTransferAndReceive) {
-        // File (название файла, имя клиента)
-
+    @Override // File (название файла, имя клиента)
+    public String transfer(String clientName, String fileName) {
+        return "Файлы переданы с сервера на клиент";
     }
 
     @Override // аргументом должен быть файл название файла и клиент
-    public String receive(FilesToTransferAndReceive filesToTransferAndReceive) { // фиксируем в БД
-        Map<String, Integer> filesFromClient = new HashMap<>();
-        String client = "julia";
-        filesFromClient.put("file1", 0);
-        filesFromClient.put("file2", 0);
-        filesToTransferAndReceive = filesToTransferAndReceive(filesFromClient, client);
-
-        List<Storage> storageList = new ArrayList<>();
-        List<String> filesToReceive = filesToTransferAndReceive.getFilesToReceive();
-        String clientName = filesToTransferAndReceive.getClientName();
-        for (String s : filesToReceive) {
-            Storage storage = new Storage(clientName, s);
-            storageList.add(storage);
-        }
-        storageRepository.saveAll(storageList);
+    public String receive(String clientName, String fileName) { // фиксируем в БД
+        Storage storage = new Storage(clientName, fileName);
+        storageRepository.save(storage);
         return "Файлы от клиента получены";
     }
 }

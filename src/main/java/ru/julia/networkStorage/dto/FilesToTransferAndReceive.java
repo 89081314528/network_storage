@@ -5,20 +5,14 @@ import java.util.List;
 public class FilesToTransferAndReceive {
     List<String> filesToTransfer;
     List<String> filesToReceive;
-    String clientName;
 
-    public FilesToTransferAndReceive(List<String> filesToTransfer, List<String> filesToReceive, String clientName) {
+    public FilesToTransferAndReceive(List<String> filesToTransfer, List<String> filesToReceive) {
         this.filesToTransfer = filesToTransfer;
         this.filesToReceive = filesToReceive;
-        this.clientName = clientName;
     }
 
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
-    }
+    public FilesToTransferAndReceive() {
 
-    public String getClientName() {
-        return clientName;
     }
 
     public List<String> getFilesToTransfer() {
