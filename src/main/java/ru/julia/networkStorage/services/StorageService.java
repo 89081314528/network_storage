@@ -1,5 +1,6 @@
 package ru.julia.networkStorage.services;
 
+import org.springframework.web.multipart.MultipartFile;
 import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
 
 import java.util.List;
@@ -10,6 +11,6 @@ public interface StorageService {
     Map<String, Integer> clientFilesFromServer(String clientName);
 
     String transfer(String clientNameName, String fileName);
-    String receive(String clientName, String fileName);
+    String receive(String clientName, String fileName, MultipartFile file);
 
 }

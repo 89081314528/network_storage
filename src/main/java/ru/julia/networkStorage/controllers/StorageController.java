@@ -29,6 +29,7 @@ private final StorageService storageService;
     public String receive(String clientName, String fileName) {
         return storageService.receive(clientName, fileName);
     }
+
     @RequestMapping("/transfer")
     public String transfer(String clientName, String fileName) {
         return storageService.transfer(clientName, fileName);

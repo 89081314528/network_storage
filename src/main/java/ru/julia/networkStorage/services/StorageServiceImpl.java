@@ -2,10 +2,14 @@ package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
 import ru.julia.networkStorage.entities.Storage;
 import ru.julia.networkStorage.repositories.StorageRepository;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,12 +58,6 @@ public class StorageServiceImpl implements StorageService {
         FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransfer,
                 filesToReceive);
 
-        for (String s : filesToTransfer) {
-            transfer(clientName, s);
-        }
-        for (String s : filesToReceive) {
-            receive(clientName, s);
-        }
         return filesToTransferAndReceive;
     }
 
@@ -81,10 +79,24 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override // аргументом должен быть файл название файла и клиент
-    public String receive(String clientName, String fileName) { // фиксируем в БД
+    // надо написать еще метод клиента который передает файл
+    public String receive(String clientName, String fileName, MultipartFile file) { // фиксируем в БД
         Storage storage = new Storage(clientName, fileName);
         storageRepository.save(storage);
-        return "Файлы от клиента получены";
+        if (!file.isEmpty()) {
+            try {
+                byte[] bytes = file.getBytes();
+                BufferedOutputStream stream =
+                        new BufferedOutputStream(new FileOutputStream(new File(fileName + "-uploaded")));
+                stream.write(bytes);
+                stream.close();
+                return "Вы удачно загрузили " + fileName + " в " + fileName + "-uploaded !";
+            } catch (Exception e) {
+                return "Вам не удалось загрузить " + fileName + " => " + e.getMessage();
+            }
+        } else {
+            return "Вам не удалось загрузить " + fileName + " потому что файл пустой.";
+        }
     }
 }
 
