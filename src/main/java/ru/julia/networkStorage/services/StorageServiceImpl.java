@@ -78,9 +78,9 @@ public class StorageServiceImpl implements StorageService {
         return "Файлы переданы с сервера на клиент";
     }
 
-    @Override // аргументом должен быть файл название файла и клиент
+    @Override
     // надо написать еще метод клиента который передает файл
-    public String receive(String clientName, String fileName, MultipartFile file) { // фиксируем в БД
+    public String receive(String clientName, String fileName, MultipartFile file) {
         Storage storage = new Storage(clientName, fileName);
         storageRepository.save(storage);
         if (!file.isEmpty()) {
