@@ -40,23 +40,23 @@ public class StorageServiceImpl implements StorageService {
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
         }
-        List<String> filesToTransfer = new ArrayList<>();// с сервера на клиент
-        List<String> filesToReceive = new ArrayList<>();// с клиента на сервер
+        List<String> filesToTransferToClient = new ArrayList<>();// с сервера на клиент
+        List<String> filesToReceiveFromClient = new ArrayList<>();// с клиента на сервер
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
         for (String s : clientFilesFromServer.keySet()) {
             if (mapFilesFromClient.containsKey(s)) {
             } else {
-                filesToTransfer.add(s);
+                filesToTransferToClient.add(s);
             }
         }
         for (String s : mapFilesFromClient.keySet()) {
             if (clientFilesFromServer.containsKey(s)) {
             } else {
-                filesToReceive.add(s);
+                filesToReceiveFromClient.add(s);
             }
         }
-        FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransfer,
-                filesToReceive);
+        FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransferToClient,
+                filesToReceiveFromClient);
 
         return filesToTransferAndReceive;
     }
@@ -73,24 +73,28 @@ public class StorageServiceImpl implements StorageService {
         return clientFilesFromServer;
     }
 
-    @Override // File (название файла, имя клиента)
-    public String transfer(String clientName, String fileName) {
+    @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
+    public String transferToClient(String clientName, String fileName) {
         return "Файлы переданы с сервера на клиент";
     }
 
     @Override
-    // надо написать еще метод клиента который передает файл
-    public String receive(String clientName, String fileName, MultipartFile file) {
+    public String receiveFromClient(String clientName, String fileName, MultipartFile file) {
+        String dirPath = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/";
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
         Storage storage = new Storage(clientName, fileName);
         storageRepository.save(storage);
         if (!file.isEmpty()) {
             try {
                 byte[] bytes = file.getBytes();
                 BufferedOutputStream stream =
-                        new BufferedOutputStream(new FileOutputStream(new File(fileName + "-uploaded")));
+                        new BufferedOutputStream(new FileOutputStream(dirPath + fileName));
                 stream.write(bytes);
                 stream.close();
-                return "Вы удачно загрузили " + fileName + " в " + fileName + "-uploaded !";
+                return "Вы удачно загрузили " + fileName + " в " + fileName;
             } catch (Exception e) {
                 return "Вам не удалось загрузить " + fileName + " => " + e.getMessage();
             }

@@ -9,7 +9,6 @@ import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
 import ru.julia.networkStorage.services.StorageService;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,14 +21,14 @@ private final StorageService storageService;
         return storageService.filesToTransferAndReceive(filesFromClient,clientName);
     }
 
-    @RequestMapping("/receive")
-    public String receive(String clientName, String fileName, MultipartFile file) {
-        return storageService.receive(clientName, fileName, file);
+    @RequestMapping("/receiveFromClient")
+    public String receiveFromClient(String clientName, String fileName, MultipartFile file) {
+        return storageService.receiveFromClient(clientName, fileName, file);
     }
 
-    @RequestMapping("/transfer")
-    public String transfer(String clientName, String fileName) {
-        return storageService.transfer(clientName, fileName);
+    @RequestMapping("/transferToClient")
+    public String transferToClient(String clientName, String fileName) {
+        return storageService.transferToClient(clientName, fileName);
     }
 
 }

@@ -10,7 +10,7 @@ public interface StorageService {
     FilesToTransferAndReceive filesToTransferAndReceive (List<String> filesFromClient, String clientName);
     Map<String, Integer> clientFilesFromServer(String clientName);
 
-    String transfer(String clientNameName, String fileName);
-    String receive(String clientName, String fileName, MultipartFile file);
+    String transferToClient(String clientNameName, String fileName);
+    String receiveFromClient(String clientName, String fileName, MultipartFile file);
 
 }
