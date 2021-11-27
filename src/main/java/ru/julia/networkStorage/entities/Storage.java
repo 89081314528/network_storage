@@ -4,6 +4,9 @@ import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -19,10 +22,13 @@ public class Storage {
     private String clientName;
     @Column(name = "file_name")
     private String fileName;
+    @Column (name = "add_date")
+    private LocalDateTime addDate;
 
-    public Storage(String clientName, String fileName) {
+    public Storage(String clientName, String fileName, LocalDateTime addDate) {
         this.clientName = clientName;
         this.fileName = fileName;
+        this.addDate = addDate;
     }
 
     public Storage() {

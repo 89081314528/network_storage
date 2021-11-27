@@ -16,6 +16,9 @@
             <column name="file_name" type="varchar(255)">
                 <constraints nullable="true"/>
             </column>
+            <column name="add_date" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
         </createTable>
     </changeSet>
 

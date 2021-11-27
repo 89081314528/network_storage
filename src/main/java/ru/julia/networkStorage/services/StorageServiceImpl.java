@@ -1,8 +1,10 @@
 package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.criteria.internal.expression.function.CurrentTimestampFunction;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import ru.julia.networkStorage.dto.FilesToDeleteFromServerAndClient;
 import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
 import ru.julia.networkStorage.entities.Storage;
 import ru.julia.networkStorage.repositories.StorageRepository;
@@ -10,6 +12,8 @@ import ru.julia.networkStorage.repositories.StorageRepository;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +66,33 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
+    public FilesToDeleteFromServerAndClient filesToDeleteFromServerAndClient(List<String> filesFromClient, String clientName) {
+        Map<String, Integer> mapFilesFromClient = new HashMap<>();
+        for (String s : filesFromClient) {
+            mapFilesFromClient.put(s, 0);
+        }
+        List<String> filesToDeleteFromServer = new ArrayList<>();// с сервера на клиент
+        List<String> filesToDeleteFromClient = new ArrayList<>();// с клиента на сервер
+        Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
+        for (String s : clientFilesFromServer.keySet()) {
+            if (mapFilesFromClient.containsKey(s)) {
+            } else {
+                filesToDeleteFromServer.add(s);
+            }
+        }
+        for (String s : mapFilesFromClient.keySet()) {
+            if (clientFilesFromServer.containsKey(s)) {
+            } else {
+                filesToDeleteFromClient.add(s);
+            }
+        }
+        FilesToDeleteFromServerAndClient filesToDeleteFromServerAndClient = new FilesToDeleteFromServerAndClient(
+                filesToDeleteFromServer, filesToDeleteFromClient);
+
+        return filesToDeleteFromServerAndClient;
+    }
+
+    @Override
     public Map<String, Integer> clientFilesFromServer(String clientName) {
         List<Storage> list = storageRepository.findAll();
         Map<String, Integer> clientFilesFromServer = new HashMap<>();
@@ -85,8 +116,7 @@ public class StorageServiceImpl implements StorageService {
         if (!dir.exists()) {
             dir.mkdir();
         }
-        Storage storage = new Storage(clientName, fileName);
-        storageRepository.save(storage);
+        storageRepository.save(new Storage(clientName, fileName, LocalDateTime.now()));
         if (!file.isEmpty()) {
             try {
                 byte[] bytes = file.getBytes();
@@ -102,5 +132,15 @@ public class StorageServiceImpl implements StorageService {
             return "Вам не удалось загрузить " + fileName + " потому что файл пустой.";
         }
     }
+
+    @Override
+    public String deleteFromServer(String clientName, String fileName) {
+        File file = new File("C:/Users/julia/Programming/IdeaProjects/network_storage/" +
+                clientName + "/" + fileName);
+        file.delete();
+        storageRepository.removeByFileName(fileName);
+        return "файл удален с сервера";
+    }
+
 }
 

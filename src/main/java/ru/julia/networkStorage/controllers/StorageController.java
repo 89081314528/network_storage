@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import ru.julia.networkStorage.dto.FilesToDeleteFromServerAndClient;
 import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
 import ru.julia.networkStorage.services.StorageService;
 
@@ -29,6 +30,18 @@ private final StorageService storageService;
     @RequestMapping("/transferToClient")
     public String transferToClient(String clientName, String fileName) {
         return storageService.transferToClient(clientName, fileName);
+    }
+
+    @RequestMapping("/deleteFiles")
+    public FilesToDeleteFromServerAndClient filesToDeleteFromServerAndClient(
+            @RequestParam("filesFromClient")List<String> filesFromClient,
+            @RequestParam("clientName")String clientName) {
+        return storageService.filesToDeleteFromServerAndClient(filesFromClient,clientName);
+    }
+
+    @RequestMapping("/deleteFromServer")
+    public String deleteFromServer(String clientName, String fileName) {
+        return storageService.deleteFromServer(clientName, fileName);
     }
 
 }
