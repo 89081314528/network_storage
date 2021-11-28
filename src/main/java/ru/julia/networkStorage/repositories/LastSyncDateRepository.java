@@ -5,17 +5,17 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 import ru.julia.networkStorage.entities.LastSyncDate;
-import ru.julia.networkStorage.entities.Storage;
 
 import java.util.List;
 import java.util.UUID;
 
-public interface StorageRepository extends JpaRepository<Storage, UUID> {
+public interface LastSyncDateRepository extends JpaRepository<LastSyncDate, UUID> {
     @Transactional
     @Modifying
-    @Query("delete from Storage u where u.fileName = ?1")
-    void removeByFileName(String name);
+    @Query("delete from LastSyncDate u where u.clientName = ?1")
+    void removeByClientName(String clientName);
 
-    @Query("select u from Storage u where u.fileName = ?1")
-    List<Storage> findByFileName(String fileName);
+    @Query("select u from LastSyncDate u where u.clientName = ?1")
+    List<LastSyncDate> findByClientName(String clientName);
+
 }

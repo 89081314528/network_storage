@@ -1,18 +1,19 @@
 package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
-import org.hibernate.query.criteria.internal.expression.function.CurrentTimestampFunction;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.julia.networkStorage.dto.FilesToDeleteFromServerAndClient;
-import ru.julia.networkStorage.dto.FilesToTransferAndReceive;
+import ru.julia.networkStorage.dto.FilesToTransferReceiveDelete;
+import ru.julia.networkStorage.entities.DeleteFile;
+import ru.julia.networkStorage.entities.LastSyncDate;
 import ru.julia.networkStorage.entities.Storage;
+import ru.julia.networkStorage.repositories.DeleteFileRepository;
+import ru.julia.networkStorage.repositories.LastSyncDateRepository;
 import ru.julia.networkStorage.repositories.StorageRepository;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,60 +37,63 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
+    private final LastSyncDateRepository lastSyncDateRepository;
+    private final DeleteFileRepository deleteFileRepository;
 
     @Override
-    public FilesToTransferAndReceive filesToTransferAndReceive(List<String> filesFromClient,
-                                                               String clientName) {
+    public FilesToTransferReceiveDelete filesToTransferReceiveDelete(List<String> filesFromClient,
+                                                                     String clientName) {
         Map<String, Integer> mapFilesFromClient = new HashMap<>();
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
         }
         List<String> filesToTransferToClient = new ArrayList<>();// с сервера на клиент
         List<String> filesToReceiveFromClient = new ArrayList<>();// с клиента на сервер
-        Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
-        for (String s : clientFilesFromServer.keySet()) {
-            if (mapFilesFromClient.containsKey(s)) {
-            } else {
-                filesToTransferToClient.add(s);
-            }
-        }
-        for (String s : mapFilesFromClient.keySet()) {
-            if (clientFilesFromServer.containsKey(s)) {
-            } else {
-                filesToReceiveFromClient.add(s);
-            }
-        }
-        FilesToTransferAndReceive filesToTransferAndReceive = new FilesToTransferAndReceive(filesToTransferToClient,
-                filesToReceiveFromClient);
-
-        return filesToTransferAndReceive;
-    }
-
-    @Override
-    public FilesToDeleteFromServerAndClient filesToDeleteFromServerAndClient(List<String> filesFromClient, String clientName) {
-        Map<String, Integer> mapFilesFromClient = new HashMap<>();
-        for (String s : filesFromClient) {
-            mapFilesFromClient.put(s, 0);
-        }
         List<String> filesToDeleteFromServer = new ArrayList<>();// с сервера на клиент
         List<String> filesToDeleteFromClient = new ArrayList<>();// с клиента на сервер
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
+
+        // дата последней синхронизации
+        List<LastSyncDate> lastSyncDateList = lastSyncDateRepository.findByClientName(clientName);
+        LocalDateTime lastSyncDate = lastSyncDateList.get(0).getAddDate();
+
         for (String s : clientFilesFromServer.keySet()) {
             if (mapFilesFromClient.containsKey(s)) {
             } else {
-                filesToDeleteFromServer.add(s);
+                List<Storage> storageList = storageRepository.findByFileName(s);
+                LocalDateTime addDate = storageList.get(0).getAddDate(); // пока файлы повторно не добавляем и он в списке один
+                if (addDate.isAfter(lastSyncDate)) {
+                    filesToTransferToClient.add(s);
+                } else {
+                    filesToDeleteFromServer.add(s);
+                }
             }
         }
         for (String s : mapFilesFromClient.keySet()) {
             if (clientFilesFromServer.containsKey(s)) {
             } else {
-                filesToDeleteFromClient.add(s);
+                List<DeleteFile> deleteFileList = deleteFileRepository.findByFileName(s);
+                LocalDateTime deleteDate = deleteFileList.get(0).getDeleteDate();
+                if (deleteDate == null) {
+                    filesToReceiveFromClient.add(s);
+                } else {
+                    if (deleteDate.isAfter(lastSyncDate)) {
+                        filesToDeleteFromClient.add(s);
+                    } else {
+                        filesToReceiveFromClient.add(s);
+//                        deleteFileRepository.removeByFileName(s);
+                    }
+                }
             }
         }
-        FilesToDeleteFromServerAndClient filesToDeleteFromServerAndClient = new FilesToDeleteFromServerAndClient(
-                filesToDeleteFromServer, filesToDeleteFromClient);
-
-        return filesToDeleteFromServerAndClient;
+        FilesToTransferReceiveDelete filesToTransferReceiveDelete = new FilesToTransferReceiveDelete(filesToTransferToClient,
+                filesToReceiveFromClient, filesToDeleteFromServer, filesToDeleteFromClient);
+// составляем список для удаления у сразу удаляем на сервере
+        for (String s : filesToDeleteFromServer) {
+            System.out.println("удален файл на сервере " + s);
+            deleteFromServer(clientName, s);
+        }
+        return filesToTransferReceiveDelete;
     }
 
     @Override
@@ -105,6 +109,7 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
+            // еще не написала этот метод
     public String transferToClient(String clientName, String fileName) {
         return "Файлы переданы с сервера на клиент";
     }
@@ -117,6 +122,7 @@ public class StorageServiceImpl implements StorageService {
             dir.mkdir();
         }
         storageRepository.save(new Storage(clientName, fileName, LocalDateTime.now()));
+        deleteFileRepository.removeByFileName(fileName);
         if (!file.isEmpty()) {
             try {
                 byte[] bytes = file.getBytes();
@@ -133,13 +139,20 @@ public class StorageServiceImpl implements StorageService {
         }
     }
 
-    @Override
+    @Override // deleteFromClient только на клиенте, deleteFromServer только на сервере
     public String deleteFromServer(String clientName, String fileName) {
         File file = new File("C:/Users/julia/Programming/IdeaProjects/network_storage/" +
                 clientName + "/" + fileName);
         file.delete();
         storageRepository.removeByFileName(fileName);
+        deleteFileRepository.save(new DeleteFile(clientName, fileName, LocalDateTime.now()));
         return "файл удален с сервера";
+    }
+
+    @Override
+    public void getLastSyncDate(String clientName) {
+        lastSyncDateRepository.removeByClientName(clientName);
+        lastSyncDateRepository.save(new LastSyncDate(clientName, LocalDateTime.now()));
     }
 
 }

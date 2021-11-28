@@ -22,4 +22,35 @@
         </createTable>
     </changeSet>
 
+    <changeSet  author="Julia"  id="28/11/1">
+        <createTable tableName="last_sync_dates">
+            <column name="last_sync_date_id" type="uuid">
+                <constraints primaryKey="true" nullable="true"/>
+            </column>
+            <column name="client_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="add_date" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+
+    <changeSet  author="Julia"  id="28/11/2">
+        <createTable tableName="delete_files">
+            <column name="delete_file_id" type="uuid">
+                <constraints primaryKey="true" nullable="true"/>
+            </column>
+            <column name="client_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="file_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="delete_date" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>
