@@ -23,41 +23,9 @@ public class DeleteFile {
     @Column (name = "delete_date")
     private LocalDateTime deleteDate;
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
     public DeleteFile(String clientName, String fileName, LocalDateTime deleteDate) {
         this.clientName = clientName;
         this.fileName = fileName;
-        this.deleteDate = deleteDate;
-    }
-
-    public UUID getDeleteFileId() {
-        return DeleteFileId;
-    }
-
-    public void setDeleteFileId(UUID deleteFileId) {
-        DeleteFileId = deleteFileId;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
-    }
-
-    public LocalDateTime getDeleteDate() {
-        return deleteDate;
-    }
-
-    public void setDeleteDate(LocalDateTime deleteDate) {
         this.deleteDate = deleteDate;
     }
 

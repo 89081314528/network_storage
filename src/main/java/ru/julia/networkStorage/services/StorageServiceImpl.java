@@ -3,7 +3,7 @@ package ru.julia.networkStorage.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.julia.networkStorage.dto.FilesToTransferReceiveDelete;
+import ru.julia.networkStorage.dto.FilesToSynchronized;
 import ru.julia.networkStorage.entities.DeleteFile;
 import ru.julia.networkStorage.entities.LastSyncDate;
 import ru.julia.networkStorage.entities.Storage;
@@ -41,16 +41,16 @@ public class StorageServiceImpl implements StorageService {
     private final DeleteFileRepository deleteFileRepository;
 
     @Override
-    public FilesToTransferReceiveDelete filesToTransferReceiveDelete(List<String> filesFromClient,
-                                                                     String clientName) {
+    public FilesToSynchronized filesToSynchronized(List<String> filesFromClient,
+                                                   String clientName) {
         Map<String, Integer> mapFilesFromClient = new HashMap<>();
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
         }
-        List<String> filesToTransferToClient = new ArrayList<>();// с сервера на клиент
-        List<String> filesToReceiveFromClient = new ArrayList<>();// с клиента на сервер
-        List<String> filesToDeleteFromServer = new ArrayList<>();// с сервера на клиент
-        List<String> filesToDeleteFromClient = new ArrayList<>();// с клиента на сервер
+        List<String> filesToTransferToClient = new ArrayList<>();
+        List<String> filesToReceiveFromClient = new ArrayList<>();
+        List<String> filesToDeleteFromServer = new ArrayList<>();
+        List<String> filesToDeleteFromClient = new ArrayList<>();
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
 
         // дата последней синхронизации
@@ -58,8 +58,8 @@ public class StorageServiceImpl implements StorageService {
         LocalDateTime lastSyncDate = lastSyncDateList.get(0).getAddDate();
 
         for (String s : clientFilesFromServer.keySet()) {
-            if (mapFilesFromClient.containsKey(s)) {
-            } else {
+            boolean fileNotFoundOnClient = !mapFilesFromClient.containsKey(s);
+            if (fileNotFoundOnClient) {
                 List<Storage> storageList = storageRepository.findByFileName(s);
                 LocalDateTime addDate = storageList.get(0).getAddDate(); // пока файлы повторно не добавляем и он в списке один
                 if (addDate.isAfter(lastSyncDate)) {
@@ -70,13 +70,15 @@ public class StorageServiceImpl implements StorageService {
             }
         }
         for (String s : mapFilesFromClient.keySet()) {
-            if (clientFilesFromServer.containsKey(s)) {
-            } else {
+            if (!clientFilesFromServer.containsKey(s)) {
+                System.out.println("if");
                 List<DeleteFile> deleteFileList = deleteFileRepository.findByFileName(s);
-                LocalDateTime deleteDate = deleteFileList.get(0).getDeleteDate();
-                if (deleteDate == null) {
+                if (deleteFileList.isEmpty()) {
+                    System.out.println("!!!!!!!!!!!!!!!!!!!");
                     filesToReceiveFromClient.add(s);
                 } else {
+                    System.out.println("else");
+                    LocalDateTime deleteDate = deleteFileList.get(0).getDeleteDate();
                     if (deleteDate.isAfter(lastSyncDate)) {
                         filesToDeleteFromClient.add(s);
                     } else {
@@ -86,14 +88,14 @@ public class StorageServiceImpl implements StorageService {
                 }
             }
         }
-        FilesToTransferReceiveDelete filesToTransferReceiveDelete = new FilesToTransferReceiveDelete(filesToTransferToClient,
+        FilesToSynchronized filesToSynchronized = new FilesToSynchronized(filesToTransferToClient,
                 filesToReceiveFromClient, filesToDeleteFromServer, filesToDeleteFromClient);
 // составляем список для удаления у сразу удаляем на сервере
         for (String s : filesToDeleteFromServer) {
             System.out.println("удален файл на сервере " + s);
             deleteFromServer(clientName, s);
         }
-        return filesToTransferReceiveDelete;
+        return filesToSynchronized;
     }
 
     @Override
@@ -109,13 +111,14 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
-            // еще не написала этот метод
+    // еще не написала этот метод
     public String transferToClient(String clientName, String fileName) {
         return "Файлы переданы с сервера на клиент";
     }
 
     @Override
     public String receiveFromClient(String clientName, String fileName, MultipartFile file) {
+        System.out.println("receive" + fileName);
         String dirPath = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/";
         File dir = new File(dirPath);
         if (!dir.exists()) {
@@ -130,11 +133,13 @@ public class StorageServiceImpl implements StorageService {
                         new BufferedOutputStream(new FileOutputStream(dirPath + fileName));
                 stream.write(bytes);
                 stream.close();
+                System.out.println("Вы удачно загрузили " + fileName + " в " + fileName);
                 return "Вы удачно загрузили " + fileName + " в " + fileName;
             } catch (Exception e) {
-                return "Вам не удалось загрузить " + fileName + " => " + e.getMessage();
+                throw new RuntimeException(e);
             }
         } else {
+            System.out.println("Вам не удалось загрузить " + fileName + " потому что файл пустой.");
             return "Вам не удалось загрузить " + fileName + " потому что файл пустой.";
         }
     }

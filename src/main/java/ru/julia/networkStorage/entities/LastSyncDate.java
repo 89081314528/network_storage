@@ -21,31 +21,7 @@ public class LastSyncDate {
     @Column (name = "add_date")
     private LocalDateTime addDate;
 
-    public UUID getLastSyncDateId() {
-        return lastSyncDateId;
-    }
-
-    public void setLastSyncDateId(UUID lastSyncDateId) {
-        this.lastSyncDateId = lastSyncDateId;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public void setClientName(String clientName) {
-        this.clientName = clientName;
-    }
-
-    public LocalDateTime getAddDate() {
-        return addDate;
-    }
-
-    public void setAddDate(LocalDateTime addDate) {
-        this.addDate = addDate;
-    }
-
-    public LastSyncDate(String clientName, LocalDateTime addDate) {
+   public LastSyncDate(String clientName, LocalDateTime addDate) {
         this.clientName = clientName;
         this.addDate = addDate;
     }
