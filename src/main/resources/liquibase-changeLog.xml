@@ -53,4 +53,18 @@
             </column>
         </createTable>
     </changeSet>
+
+    <changeSet  author="Julia"  id="30/11/2">
+        <createTable tableName="synchronization_lock">
+            <column name="synchronization_lock_id" type="uuid">
+                <constraints primaryKey="true" nullable="true"/>
+            </column>
+            <column name="client_name" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="lock" type="integer">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
 </databaseChangeLog>
