@@ -1,11 +1,10 @@
 package ru.julia.networkStorage.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import ru.julia.networkStorage.dto.FilesToTransferReceiveDelete;
+import ru.julia.networkStorage.dto.FilesToSynchronized;
 import ru.julia.networkStorage.services.StorageService;
 
 import java.util.List;
@@ -15,10 +14,11 @@ import java.util.List;
 public class StorageController {
 private final StorageService storageService;
 
+
     @RequestMapping("/getFiles")
-    public FilesToTransferReceiveDelete filesToTransferAndReceive(@RequestParam("filesFromClient")List<String> filesFromClient,
-                                                                  @RequestParam("clientName")String clientName) {
-        return storageService.filesToTransferReceiveDelete(filesFromClient,clientName);
+    public FilesToSynchronized filesToSynchronized(@RequestParam("filesFromClient")List<String> filesFromClient,
+                                                   @RequestParam("clientName")String clientName) {
+        return storageService.filesToSynchronized(filesFromClient,clientName);
     }
 
     @RequestMapping("/receiveFromClient")
@@ -26,10 +26,15 @@ private final StorageService storageService;
         return storageService.receiveFromClient(clientName, fileName, file);
     }
 
-    @RequestMapping("/transferToClient")
-    public String transferToClient(String clientName, String fileName) {
+    @GetMapping(
+            value = "/transferToClient",
+            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
+    )
+    public @ResponseBody
+    byte[] transferToClient(String clientName, String fileName) {
         return storageService.transferToClient(clientName, fileName);
     }
+
 
     @RequestMapping("/deleteFromServer")
     public String deleteFromServer(String clientName, String fileName) {
@@ -40,4 +45,16 @@ private final StorageService storageService;
         storageService.getLastSyncDate(clientName);
     }
 
+    @RequestMapping("/makeSyncLock")
+    void makeSyncLock(String clientName) {
+        storageService.makeSyncLock(clientName);
+    }
+    @RequestMapping("/makeSyncOpen")
+    void makeSyncOpen(String clientName) {
+        storageService.makeSyncOpen(clientName);
+    }
+    @RequestMapping("/getSyncLock")
+    public Integer getSyncLock(String clientName) {
+        return storageService.getSyncLock(clientName);
+    }
 }

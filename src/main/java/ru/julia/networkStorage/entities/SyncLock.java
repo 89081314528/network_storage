@@ -4,30 +4,25 @@ import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "delete_files")
+@Table(name = "synchronization_lock")
 @Data
-public class DeleteFile {
-    @Column(name = "delete_file_id")
+public class SyncLock {
+    @Column(name = "synchronization_lock_id")
     @Id
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @GeneratedValue(generator = "uuid2")
     private UUID DeleteFileId = UUID.randomUUID();
     @Column(name = "client_name")
     private String clientName;
-    @Column(name = "file_name")
-    private String fileName;
-    @Column (name = "delete_date")
-    private LocalDateTime deleteDate;
+    @Column(name = "lock")
+    private Integer lock;
 
-    public DeleteFile(String clientName, String fileName, LocalDateTime deleteDate) {
+    public SyncLock(String clientName, Integer lock) {
         this.clientName = clientName;
-        this.fileName = fileName;
-        this.deleteDate = deleteDate;
+        this.lock = lock;
     }
-
-    public DeleteFile(){}
+    public SyncLock(){};
 }

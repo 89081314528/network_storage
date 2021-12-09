@@ -1,19 +1,21 @@
 package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.julia.networkStorage.dto.FilesToTransferReceiveDelete;
+import ru.julia.networkStorage.dto.FilesToSynchronized;
 import ru.julia.networkStorage.entities.DeleteFile;
 import ru.julia.networkStorage.entities.LastSyncDate;
 import ru.julia.networkStorage.entities.Storage;
+import ru.julia.networkStorage.entities.SyncLock;
 import ru.julia.networkStorage.repositories.DeleteFileRepository;
 import ru.julia.networkStorage.repositories.LastSyncDateRepository;
 import ru.julia.networkStorage.repositories.StorageRepository;
+import ru.julia.networkStorage.repositories.SyncLockRepository;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,18 +41,21 @@ public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
     private final LastSyncDateRepository lastSyncDateRepository;
     private final DeleteFileRepository deleteFileRepository;
+    private final SyncLockRepository syncLockRepository;
+
+    private final Logger log = LoggerFactory.getLogger(StorageServiceImpl.class);
 
     @Override
-    public FilesToTransferReceiveDelete filesToTransferReceiveDelete(List<String> filesFromClient,
-                                                                     String clientName) {
+    public FilesToSynchronized filesToSynchronized(List<String> filesFromClient,
+                                                   String clientName) {
         Map<String, Integer> mapFilesFromClient = new HashMap<>();
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
         }
-        List<String> filesToTransferToClient = new ArrayList<>();// с сервера на клиент
-        List<String> filesToReceiveFromClient = new ArrayList<>();// с клиента на сервер
-        List<String> filesToDeleteFromServer = new ArrayList<>();// с сервера на клиент
-        List<String> filesToDeleteFromClient = new ArrayList<>();// с клиента на сервер
+        List<String> filesToTransferToClient = new ArrayList<>();
+        List<String> filesToReceiveFromClient = new ArrayList<>();
+        List<String> filesToDeleteFromServer = new ArrayList<>();
+        List<String> filesToDeleteFromClient = new ArrayList<>();
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
 
         // дата последней синхронизации
@@ -58,8 +63,8 @@ public class StorageServiceImpl implements StorageService {
         LocalDateTime lastSyncDate = lastSyncDateList.get(0).getAddDate();
 
         for (String s : clientFilesFromServer.keySet()) {
-            if (mapFilesFromClient.containsKey(s)) {
-            } else {
+            boolean fileNotFoundOnClient = !mapFilesFromClient.containsKey(s);
+            if (fileNotFoundOnClient) {
                 List<Storage> storageList = storageRepository.findByFileName(s);
                 LocalDateTime addDate = storageList.get(0).getAddDate(); // пока файлы повторно не добавляем и он в списке один
                 if (addDate.isAfter(lastSyncDate)) {
@@ -70,13 +75,13 @@ public class StorageServiceImpl implements StorageService {
             }
         }
         for (String s : mapFilesFromClient.keySet()) {
-            if (clientFilesFromServer.containsKey(s)) {
-            } else {
+            boolean fileNotFoundOnServer = !clientFilesFromServer.containsKey(s);
+            if (fileNotFoundOnServer) {
                 List<DeleteFile> deleteFileList = deleteFileRepository.findByFileName(s);
-                LocalDateTime deleteDate = deleteFileList.get(0).getDeleteDate();
-                if (deleteDate == null) {
+                if (deleteFileList.isEmpty()) {
                     filesToReceiveFromClient.add(s);
                 } else {
+                    LocalDateTime deleteDate = deleteFileList.get(0).getDeleteDate();
                     if (deleteDate.isAfter(lastSyncDate)) {
                         filesToDeleteFromClient.add(s);
                     } else {
@@ -86,14 +91,14 @@ public class StorageServiceImpl implements StorageService {
                 }
             }
         }
-        FilesToTransferReceiveDelete filesToTransferReceiveDelete = new FilesToTransferReceiveDelete(filesToTransferToClient,
+        FilesToSynchronized filesToSynchronized = new FilesToSynchronized(filesToTransferToClient,
                 filesToReceiveFromClient, filesToDeleteFromServer, filesToDeleteFromClient);
-// составляем список для удаления у сразу удаляем на сервере
+// сразу удаляем на сервере файлы из списка для удаления
         for (String s : filesToDeleteFromServer) {
-            System.out.println("удален файл на сервере " + s);
             deleteFromServer(clientName, s);
+            log.info("удален файл на сервере " + s);
         }
-        return filesToTransferReceiveDelete;
+        return filesToSynchronized;
     }
 
     @Override
@@ -109,13 +114,23 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
-            // еще не написала этот метод
-    public String transferToClient(String clientName, String fileName) {
-        return "Файлы переданы с сервера на клиент";
+    // еще не написала этот метод
+    public byte[] transferToClient(String clientName, String fileName) {
+        String path = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/" + fileName;
+        File file = new File(path);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            fileInputStream.transferTo(byteArrayOutputStream);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return byteArrayOutputStream.toByteArray();
     }
 
     @Override
     public String receiveFromClient(String clientName, String fileName, MultipartFile file) {
+        // создаем директорию
         String dirPath = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/";
         File dir = new File(dirPath);
         if (!dir.exists()) {
@@ -123,19 +138,17 @@ public class StorageServiceImpl implements StorageService {
         }
         storageRepository.save(new Storage(clientName, fileName, LocalDateTime.now()));
         deleteFileRepository.removeByFileName(fileName);
-        if (!file.isEmpty()) {
-            try {
-                byte[] bytes = file.getBytes();
-                BufferedOutputStream stream =
-                        new BufferedOutputStream(new FileOutputStream(dirPath + fileName));
-                stream.write(bytes);
-                stream.close();
-                return "Вы удачно загрузили " + fileName + " в " + fileName;
-            } catch (Exception e) {
-                return "Вам не удалось загрузить " + fileName + " => " + e.getMessage();
-            }
-        } else {
-            return "Вам не удалось загрузить " + fileName + " потому что файл пустой.";
+        try {
+            byte[] bytes = file.getBytes();
+            BufferedOutputStream stream =
+                    new BufferedOutputStream(new FileOutputStream(dirPath + fileName));
+            stream.write(bytes);
+            stream.close();
+            log.info("Вы удачно загрузили " + fileName + " в " + clientName);
+            return "Вы удачно загрузили " + fileName + " в " + clientName;
+        } catch (Exception e) {
+            log.info("При загрузке файла возникла ошибка");
+            throw new RuntimeException(e);
         }
     }
 
@@ -155,5 +168,27 @@ public class StorageServiceImpl implements StorageService {
         lastSyncDateRepository.save(new LastSyncDate(clientName, LocalDateTime.now()));
     }
 
+    @Override // нужно сделать транзакцию в явном виде!!!
+    public void makeSyncLock(String clientName) {
+        syncLockRepository.findByClientName(clientName).get(0).setLock(1);
+    }
+
+    @Override
+    public void makeSyncOpen(String clientName) {
+        syncLockRepository.findByClientName(clientName).get(0).setLock(0);
+    }
+
+    @Override
+    public Integer getSyncLock(String clientName) {
+        if (syncLockRepository.findByClientName(clientName).size() == 0) {
+            syncLockRepository.save(new SyncLock(clientName, 0));
+            return 0;
+        } else {
+            if (syncLockRepository.findByClientName(clientName).get(0).getLock() == 0) {
+                return 0;
+            }
+            else return 1;
+        }
+    }
 }
 
