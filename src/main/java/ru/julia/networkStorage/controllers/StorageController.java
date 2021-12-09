@@ -17,8 +17,9 @@ private final StorageService storageService;
 
     @RequestMapping("/getFiles")
     public FilesToSynchronized filesToSynchronized(@RequestParam("filesFromClient")List<String> filesFromClient,
-                                                   @RequestParam("clientName")String clientName) {
-        return storageService.filesToSynchronized(filesFromClient,clientName);
+                                                   @RequestParam("clientName")String clientName,
+                                                   @RequestParam("idDevice")String idDevice) {
+        return storageService.filesToSynchronized(filesFromClient,clientName,idDevice);
     }
 
     @RequestMapping("/receiveFromClient")
@@ -30,7 +31,7 @@ private final StorageService storageService;
             value = "/transferToClient",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
-    public @ResponseBody
+//    public @ResponseBody аннотация не нужна
     byte[] transferToClient(String clientName, String fileName) {
         return storageService.transferToClient(clientName, fileName);
     }
