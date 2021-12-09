@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.entities;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "delete_files")
 @Data
+@NoArgsConstructor
 public class DeleteFile {
     @Column(name = "delete_file_id")
     @Id
@@ -28,6 +30,4 @@ public class DeleteFile {
         this.fileName = fileName;
         this.deleteDate = deleteDate;
     }
-
-    public DeleteFile(){}
 }

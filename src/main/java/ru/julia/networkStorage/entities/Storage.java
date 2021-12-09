@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.entities;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "storages")
 @Data
+@NoArgsConstructor
 public class Storage {
     @Column(name = "storage_id")
     @Id
@@ -29,8 +31,5 @@ public class Storage {
         this.clientName = clientName;
         this.fileName = fileName;
         this.addDate = addDate;
-    }
-
-    public Storage() {
     }
 }

@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,13 +38,12 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
     private final LastSyncDateRepository lastSyncDateRepository;
     private final DeleteFileRepository deleteFileRepository;
     private final SyncLockRepository syncLockRepository;
-
-    private final Logger log = LoggerFactory.getLogger(StorageServiceImpl.class);
 
     @Override
     public FilesToSynchronized filesToSynchronized(List<String> filesFromClient,
