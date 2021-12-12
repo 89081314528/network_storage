@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,17 +38,16 @@ import java.util.Map;
  */
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class StorageServiceImpl implements StorageService {
     private final StorageRepository storageRepository;
     private final LastSyncDateRepository lastSyncDateRepository;
     private final DeleteFileRepository deleteFileRepository;
     private final SyncLockRepository syncLockRepository;
 
-    private final Logger log = LoggerFactory.getLogger(StorageServiceImpl.class);
-
     @Override
     public FilesToSynchronized filesToSynchronized(List<String> filesFromClient,
-                                                   String clientName) {
+                                                   String clientName, String idDevice) {
         Map<String, Integer> mapFilesFromClient = new HashMap<>();
         for (String s : filesFromClient) {
             mapFilesFromClient.put(s, 0);
@@ -59,7 +59,7 @@ public class StorageServiceImpl implements StorageService {
         Map<String, Integer> clientFilesFromServer = clientFilesFromServer(clientName);
 
         // дата последней синхронизации
-        List<LastSyncDate> lastSyncDateList = lastSyncDateRepository.findByClientName(clientName);
+        List<LastSyncDate> lastSyncDateList = lastSyncDateRepository.findByClientName(clientName + idDevice);//!!добавить устройство
         LocalDateTime lastSyncDate = lastSyncDateList.get(0).getAddDate();
 
         for (String s : clientFilesFromServer.keySet()) {
@@ -114,7 +114,6 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
-    // еще не написала этот метод
     public byte[] transferToClient(String clientName, String fileName) {
         String path = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/" + fileName;
         File file = new File(path);
@@ -122,6 +121,7 @@ public class StorageServiceImpl implements StorageService {
         try {
             FileInputStream fileInputStream = new FileInputStream(file);
             fileInputStream.transferTo(byteArrayOutputStream);
+            fileInputStream.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.entities;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -10,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "last_sync_dates")
 @Data
+@NoArgsConstructor
 public class LastSyncDate {
     @Column(name = "last_sync_date_id")
     @Id
@@ -25,5 +27,4 @@ public class LastSyncDate {
         this.clientName = clientName;
         this.addDate = addDate;
     }
-    public LastSyncDate(){}
 }

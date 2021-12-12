@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface StorageService {
-    FilesToSynchronized filesToSynchronized(List<String> filesFromClient, String clientName);
+    FilesToSynchronized filesToSynchronized(List<String> filesFromClient, String clientName, String idDevice);
 
     Map<String, Integer> clientFilesFromServer(String clientName);
 

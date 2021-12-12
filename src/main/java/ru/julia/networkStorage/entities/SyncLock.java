@@ -1,6 +1,7 @@
 package ru.julia.networkStorage.entities;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -9,6 +10,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "synchronization_lock")
 @Data
+@NoArgsConstructor
 public class SyncLock {
     @Column(name = "synchronization_lock_id")
     @Id
@@ -24,5 +26,4 @@ public class SyncLock {
         this.clientName = clientName;
         this.lock = lock;
     }
-    public SyncLock(){};
 }
