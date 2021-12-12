@@ -31,8 +31,8 @@ private final StorageService storageService;
             value = "/transferToClient",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
-//    public @ResponseBody аннотация не нужна
-    byte[] transferToClient(String clientName, String fileName) {
+
+    public byte[] transferToClient(String clientName, String fileName) {
         return storageService.transferToClient(clientName, fileName);
     }
 

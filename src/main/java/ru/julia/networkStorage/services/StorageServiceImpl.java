@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.julia.networkStorage.dto.FilesToSynchronized;
@@ -15,7 +16,6 @@ import ru.julia.networkStorage.repositories.DeleteFileRepository;
 import ru.julia.networkStorage.repositories.LastSyncDateRepository;
 import ru.julia.networkStorage.repositories.StorageRepository;
 import ru.julia.networkStorage.repositories.SyncLockRepository;
-
 import java.io.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,19 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Написать сервер, у сервера написать метод в контроллере, который принимает список файлов и имя клиента,
- * в качестве возвращаемого значения объект, в котором внутри 2 листа строк – один лист, это названия файлов,
- * которые нужно передать на сервер, другой, названия файлов, которые нужно получить с сервера. Для этого
- * нужно посмотреть в БД и по имени клиента(пользователя) сравнить, какие файлы есть на сервере для этого
- * клиента со списком файлов на клиенте. Здесь запись в БД не делается.
- * Список файлов находится в БД где нужно сделать таблицу (клиент, названия файлов)
- * На сервере сделать еще 2 метода. Один – получить файл, другой передать файл. Эти оба метода в качестве
- * аргументов будут принимать названия файлов и сервер будет фиксировать в БД, что этот файл получен.
- * А что файл был отправлен на клиент сервер фиксировать не будет потому что клиент периодически на сервер
- * отсылает список файлов.
- * В БД запись делается только когда клиент вызывает метод acceptFile на сервере.
- */
 @Service
 @RequiredArgsConstructor
 @Log4j2
@@ -44,6 +31,8 @@ public class StorageServiceImpl implements StorageService {
     private final LastSyncDateRepository lastSyncDateRepository;
     private final DeleteFileRepository deleteFileRepository;
     private final SyncLockRepository syncLockRepository;
+    @Value(value = "${pathToDirOnServer}")
+    private String pathToDirOnServer;
 
     @Override
     public FilesToSynchronized filesToSynchronized(List<String> filesFromClient,
@@ -115,7 +104,7 @@ public class StorageServiceImpl implements StorageService {
 
     @Override // File (название файла, имя клиента). Сервер отвечает на запрос клиента о передаче файла
     public byte[] transferToClient(String clientName, String fileName) {
-        String path = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/" + fileName;
+        String path = pathToDirOnServer + "/" + clientName + "/" + fileName;
         File file = new File(path);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try {
@@ -131,7 +120,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public String receiveFromClient(String clientName, String fileName, MultipartFile file) {
         // создаем директорию
-        String dirPath = "C:/Users/julia/Programming/IdeaProjects/network_storage/" + clientName + "/";
+        String dirPath = pathToDirOnServer + "/" + clientName + "/";
         File dir = new File(dirPath);
         if (!dir.exists()) {
             dir.mkdir();
@@ -154,7 +143,7 @@ public class StorageServiceImpl implements StorageService {
 
     @Override // deleteFromClient только на клиенте, deleteFromServer только на сервере
     public String deleteFromServer(String clientName, String fileName) {
-        File file = new File("C:/Users/julia/Programming/IdeaProjects/network_storage/" +
+        File file = new File(pathToDirOnServer + "/" +
                 clientName + "/" + fileName);
         file.delete();
         storageRepository.removeByFileName(fileName);
